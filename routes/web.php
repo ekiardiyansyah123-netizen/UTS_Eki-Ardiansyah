@@ -2,70 +2,44 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\AdminAuthController;
 
 /*
 |--------------------------------------------------------------------------
-| DATA PRODUK ESSENZA COFFEE (DEMO)
+| HELPER: MENGAMBIL DATA PRODUK DARI DATABASE
 |--------------------------------------------------------------------------
-| Data sementara. Nantinya akan diganti dengan database MySQL.
 */
 
-$products = [
-    [
-        'id' => 1,
-        'name' => 'Espresso',
-        'category' => 'Coffee',
-        'price' => 25000,
-        'stock' => 20,
-        'description' => 'Espresso klasik dengan karakter rasa yang kuat, aroma khas kopi, dan crema yang lembut.',
-        'image' => 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=85',
-    ],
-    [
-        'id' => 2,
-        'name' => 'Cappuccino',
-        'category' => 'Coffee',
-        'price' => 35000,
-        'stock' => 15,
-        'description' => 'Perpaduan espresso, susu steamed, dan foam lembut dengan cita rasa seimbang.',
-        'image' => 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=800&q=85',
-    ],
-    [
-        'id' => 3,
-        'name' => 'Cafe Latte',
-        'category' => 'Coffee',
-        'price' => 32000,
-        'stock' => 18,
-        'description' => 'Espresso dengan susu creamy yang menghasilkan rasa lembut dan nikmat.',
-        'image' => 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=800&q=85',
-    ],
-    [
-        'id' => 4,
-        'name' => 'Caramel Macchiato',
-        'category' => 'Coffee',
-        'price' => 38000,
-        'stock' => 12,
-        'description' => 'Minuman kopi dengan susu creamy dan sentuhan karamel manis yang memanjakan.',
-        'image' => 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=800&q=85',
-    ],
-    [
-        'id' => 5,
-        'name' => 'Matcha Latte',
-        'category' => 'Non Coffee',
-        'price' => 35000,
-        'stock' => 14,
-        'description' => 'Matcha pilihan yang dipadukan dengan susu untuk menghasilkan rasa earthy dan creamy.',
-        'image' => 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=800&q=85',
-    ],
-    [
-        'id' => 6,
-        'name' => 'Chocolate Latte',
-        'category' => 'Non Coffee',
-        'price' => 33000,
-        'stock' => 10,
-        'description' => 'Cokelat premium dengan susu segar, cocok untuk menemani waktu santai.',
-        'image' => 'https://images.unsplash.com/photo-1544787219-7f47payload?auto=format&fit=crop&w=800&q=85',
-    ],
-];
+$getProducts = function () {
+
+    $rows = DB::table('produks')
+        ->leftJoin('kategoris', 'produks.kategori_id', '=', 'kategoris.id')
+        ->select(
+            'produks.*',
+            'kategoris.nama as kategori_nama'
+        )
+        ->orderBy('produks.id', 'desc')
+        ->get();
+
+    return $rows->map(function ($row) {
+
+        return [
+            'id' => $row->id,
+            'name' => $row->nama,
+            'category' => $row->kategori_nama ?? 'Uncategorized',
+            'price' => $row->harga,
+            'stock' => $row->stok,
+            'description' => $row->deskripsi,
+            'image' => $row->gambar
+                ? Storage::url($row->gambar)
+                : 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=85',
+        ];
+
+    })->toArray();
+
+};
 
 
 /*
@@ -75,19 +49,29 @@ $products = [
 */
 
 // Homepage
-Route::get('/', function () use ($products) {
+Route::get('/', function () use ($getProducts) {
+
+    $products = $getProducts();
+
     return view('home', compact('products'));
+
 })->name('home');
 
 
 // Katalog menu
-Route::get('/menu', function () use ($products) {
+Route::get('/menu', function () use ($getProducts) {
+
+    $products = $getProducts();
+
     return view('menu', compact('products'));
+
 })->name('menu');
 
 
 // Detail produk
-Route::get('/menu/{id}', function ($id) use ($products) {
+Route::get('/menu/{id}', function ($id) use ($getProducts) {
+
+    $products = $getProducts();
 
     $product = collect($products)->firstWhere('id', (int) $id);
 
@@ -100,7 +84,7 @@ Route::get('/menu/{id}', function ($id) use ($products) {
 })->name('product.detail');
 
 
-// About / Our Story
+// About
 Route::get('/about', function () {
     return view('about');
 })->name('about');
@@ -114,35 +98,157 @@ Route::get('/contact', function () {
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN ESSENZA COFFEE
+| ADMIN LOGIN
 |--------------------------------------------------------------------------
-| Dashboard dan manajemen produk sementara menggunakan data demo.
 */
 
-Route::prefix('admin')->name('admin.')->group(function () use ($products) {
+Route::get('/admin/login', [AdminAuthController::class, 'login'])
+    ->name('admin.login');
 
-    // Dashboard
-    Route::get('/', function () use ($products) {
+Route::post('/admin/login', [AdminAuthController::class, 'authenticate'])
+    ->name('admin.authenticate');
+
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
+    ->name('admin.logout');
+
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN DASHBOARD & CRUD PRODUK
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin')->name('admin.')->group(function () use ($getProducts) {
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/dashboard', function () use ($getProducts) {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login')
+                ->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        $products = $getProducts();
+
         return view('admin.dashboard', compact('products'));
+
     })->name('dashboard');
 
 
-    // Daftar produk
-    Route::get('/products', function () use ($products) {
+    /*
+    |--------------------------------------------------------------------------
+    | DAFTAR PRODUK
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/products', function () use ($getProducts) {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
+        $products = $getProducts();
+
         return view('admin.products', compact('products'));
+
     })->name('products');
 
 
-    // Form tambah produk
+    /*
+    |--------------------------------------------------------------------------
+    | FORM TAMBAH PRODUK
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/products/create', function () {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
         $product = null;
 
         return view('admin.form', compact('product'));
+
     })->name('products.create');
 
 
-    // Form edit produk
-    Route::get('/products/{id}/edit', function ($id) use ($products) {
+    /*
+    |--------------------------------------------------------------------------
+    | SIMPAN PRODUK BARU
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/products', function () {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
+        request()->validate([
+            'name' => 'required|string|max:150',
+            'category' => 'required|in:Coffee,Non Coffee',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'description' => 'required|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        // Cari kategori
+        $category = DB::table('kategoris')
+            ->where('nama', request('category'))
+            ->first();
+
+        if (!$category) {
+            return back()
+                ->withInput()
+                ->withErrors(['category' => 'Kategori tidak ditemukan di database.']);
+        }
+
+        // Upload gambar jika tersedia
+        $imagePath = null;
+
+        if (request()->hasFile('image')) {
+            $imagePath = request()->file('image')->store('products', 'public');
+        }
+
+        // Simpan produk ke database
+        DB::table('produks')->insert([
+            'nama' => request('name'),
+            'kategori_id' => $category->id,
+            'harga' => request('price'),
+            'stok' => request('stock'),
+            'deskripsi' => request('description'),
+            'gambar' => $imagePath,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.products')
+            ->with('success', 'Produk berhasil ditambahkan!');
+
+    })->name('products.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FORM EDIT PRODUK
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/products/{id}/edit', function ($id) use ($getProducts) {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
+        $products = $getProducts();
 
         $product = collect($products)->firstWhere('id', (int) $id);
 
@@ -153,5 +259,112 @@ Route::prefix('admin')->name('admin.')->group(function () use ($products) {
         return view('admin.form', compact('product'));
 
     })->name('products.edit');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PRODUK
+    |--------------------------------------------------------------------------
+    */
+
+    Route::put('/products/{id}', function ($id) {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
+        $product = DB::table('produks')->where('id', $id)->first();
+
+        if (!$product) {
+            abort(404);
+        }
+
+        request()->validate([
+            'name' => 'required|string|max:150',
+            'category' => 'required|in:Coffee,Non Coffee',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'description' => 'required|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $category = DB::table('kategoris')
+            ->where('nama', request('category'))
+            ->first();
+
+        if (!$category) {
+            return back()
+                ->withInput()
+                ->withErrors(['category' => 'Kategori tidak ditemukan.']);
+        }
+
+        // Pertahankan gambar lama
+        $imagePath = $product->gambar;
+
+        // Jika upload gambar baru
+        if (request()->hasFile('image')) {
+
+            // Hapus gambar lama jika berasal dari storage
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            $imagePath = request()->file('image')
+                ->store('products', 'public');
+        }
+
+        DB::table('produks')
+            ->where('id', $id)
+            ->update([
+                'nama' => request('name'),
+                'kategori_id' => $category->id,
+                'harga' => request('price'),
+                'stok' => request('stock'),
+                'deskripsi' => request('description'),
+                'gambar' => $imagePath,
+                'updated_at' => now(),
+            ]);
+
+        return redirect()
+            ->route('admin.products')
+            ->with('success', 'Produk berhasil diperbarui!');
+
+    })->name('products.update');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | HAPUS PRODUK
+    |--------------------------------------------------------------------------
+    */
+
+    Route::delete('/products/{id}', function ($id) {
+
+        if (!session('admin_logged_in')) {
+            return redirect()->route('admin.login');
+        }
+
+        $product = DB::table('produks')
+            ->where('id', $id)
+            ->first();
+
+        if (!$product) {
+            abort(404);
+        }
+
+        // Hapus gambar dari storage jika ada
+        if ($product->gambar) {
+            Storage::disk('public')->delete($product->gambar);
+        }
+
+        DB::table('produks')
+            ->where('id', $id)
+            ->delete();
+
+        return redirect()
+            ->route('admin.products')
+            ->with('success', 'Produk berhasil dihapus!');
+
+    })->name('products.destroy');
 
 });

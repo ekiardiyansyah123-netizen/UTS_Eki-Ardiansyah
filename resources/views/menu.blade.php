@@ -5,143 +5,325 @@
 
 @section('content')
 
-<section class="page-hero">
-    <div class="container">
-        <span class="section-label">MADE WITH LOVE & COFFEE</span>
+{{-- MENU HERO --}}
+<section class="menu-hero">
+    <div class="container menu-hero-content">
 
-        <h1>Our <em>menu.</em></h1>
+        <span class="section-label">MADE WITH LOVE</span>
+
+        <h1>
+            Discover our<br>
+            <em>menu.</em>
+        </h1>
 
         <p>
-            Discover your new favorite drink.
-            Every cup, a moment worth enjoying.
+            Find your favorite drink and make every moment
+            a little more special.
         </p>
+
     </div>
 </section>
 
+
+{{-- MENU CATALOG --}}
 <section class="section catalog-section">
     <div class="container">
 
-        <div class="catalog-toolbar">
+        {{-- HEADER --}}
+        <div class="section-heading catalog-heading">
 
-            <div class="filter-buttons">
-                <button class="filter-btn active" data-filter="all">
-                    All
-                </button>
+            <div>
+                <span class="section-label">
+                    SOMETHING FOR EVERY MOMENT
+                </span>
 
-                <button class="filter-btn" data-filter="Coffee">
-                    Coffee
-                </button>
-
-                <button class="filter-btn" data-filter="Non Coffee">
-                    Non Coffee
-                </button>
+                <h2>Explore our <em>favorites.</em></h2>
             </div>
 
-            <div class="search-box">
-                <span>⌕</span>
+            <span class="catalog-count">
+                {{ count($products) }} products
+            </span>
+
+        </div>
+
+
+        {{-- SEARCH --}}
+        <div class="menu-search-wrapper">
+
+            <div class="menu-search">
+
+                <span class="search-icon">⌕</span>
+
                 <input
                     type="text"
-                    id="productSearch"
-                    placeholder="Search your favorite..."
+                    id="menuSearch"
+                    placeholder="Search your favorite coffee..."
                 >
+
+                <button
+                    type="button"
+                    id="clearSearch"
+                    class="clear-search"
+                >
+                    ×
+                </button>
+
             </div>
 
         </div>
 
-        <div class="product-grid catalog-grid" id="productGrid">
 
-            @foreach($products as $product)
+        {{-- CATEGORY FILTER --}}
+        <div class="menu-filter">
 
-                <article class="product-card catalog-card"
-                    data-category="{{ $product['category'] }}"
-                    data-name="{{ strtolower($product['name']) }}">
+            <button
+                type="button"
+                class="filter-btn active"
+                data-filter="all"
+            >
+                All Menu
+            </button>
 
-                    <a href="{{ route('menu.detail', $product['slug']) }}" class="product-image">
-                        <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}">
-                    </a>
+            @foreach(array_unique(array_column($products, 'category')) as $category)
 
-                    <div class="product-info">
-                        <div>
-                            <span class="product-category">
-                                {{ $product['category'] }}
-                            </span>
-
-                            <h3>{{ $product['name'] }}</h3>
-                        </div>
-
-                        <span class="product-price">
-                            Rp {{ number_format($product['price'], 0, ',', '.') }}
-                        </span>
-                    </div>
-
-                    <p class="product-description">
-                        {{ $product['description'] }}
-                    </p>
-
-                    <a href="{{ route('menu.detail', $product['slug']) }}" class="product-link">
-                        View details <span>↗</span>
-                    </a>
-
-                </article>
+                <button
+                    type="button"
+                    class="filter-btn"
+                    data-filter="{{ $category }}"
+                >
+                    {{ $category }}
+                </button>
 
             @endforeach
 
         </div>
 
-        <div id="emptyResult" class="empty-result" style="display:none;">
-            <h3>Menu not found</h3>
-            <p>Try searching for another drink.</p>
+
+        {{-- PRODUCT GRID --}}
+        <div class="product-grid catalog-grid" id="productGrid">
+
+            @forelse($products as $product)
+
+                <article
+                    class="product-card catalog-card"
+                    data-category="{{ $product['category'] }}"
+                    data-name="{{ strtolower($product['name']) }}"
+                >
+
+                    {{-- PRODUCT IMAGE --}}
+                    <a
+                        href="{{ route('product.detail', $product['id']) }}"
+                        class="product-image"
+                    >
+
+                        <img
+                            src="{{ $product['image'] }}"
+                            alt="{{ $product['name'] }}"
+                            loading="lazy"
+                        >
+
+                        <span class="product-tag">
+                            ESSENZA FAVORITE
+                        </span>
+
+                    </a>
+
+
+                    {{-- PRODUCT INFO --}}
+                    <div class="product-info">
+
+                        <div>
+
+                            <span class="product-category">
+                                {{ $product['category'] }}
+                            </span>
+
+                            <h3>
+                                {{ $product['name'] }}
+                            </h3>
+
+                        </div>
+
+                        <span class="product-price">
+                            Rp {{ number_format($product['price'], 0, ',', '.') }}
+                        </span>
+
+                    </div>
+
+
+                    {{-- PRODUCT DESCRIPTION --}}
+                    @if(isset($product['description']) && $product['description'])
+
+                        <p class="catalog-description">
+                            {{ $product['description'] }}
+                        </p>
+
+                    @endif
+
+
+                    {{-- DETAIL BUTTON --}}
+                    <a
+                        href="{{ route('product.detail', $product['id']) }}"
+                        class="catalog-detail-link"
+                    >
+                        Discover this drink <span>↗</span>
+                    </a>
+
+                </article>
+
+            @empty
+
+                <div class="empty-menu">
+
+                    <div class="empty-menu-icon">☕</div>
+
+                    <h3>Our menu is preparing.</h3>
+
+                    <p>
+                        There are currently no products available.
+                        Please come back soon.
+                    </p>
+
+                </div>
+
+            @endforelse
+
+        </div>
+
+
+        {{-- NO SEARCH RESULTS --}}
+        <div id="noResults" class="no-results" style="display: none;">
+
+            <div class="empty-menu-icon">⌕</div>
+
+            <h3>No drinks found.</h3>
+
+            <p>
+                Try another keyword or choose a different category.
+            </p>
+
         </div>
 
     </div>
 </section>
 
-@endsection
 
-@push('scripts')
+{{-- MENU CTA --}}
+<section class="cta-section">
+    <div class="container cta-content">
+
+        <span class="section-label">
+            YOUR NEXT FAVORITE CUP
+        </span>
+
+        <h2>
+            Every sip is a<br>
+            <em>little escape.</em>
+        </h2>
+
+        <a href="{{ route('about') }}" class="btn btn-dark">
+            Discover our story <span>↗</span>
+        </a>
+
+    </div>
+</section>
+
+
+{{-- MENU FILTER SCRIPT --}}
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+
     const filterButtons = document.querySelectorAll('.filter-btn');
     const productCards = document.querySelectorAll('.catalog-card');
-    const searchInput = document.getElementById('productSearch');
-    const emptyResult = document.getElementById('emptyResult');
+    const searchInput = document.getElementById('menuSearch');
+    const clearSearch = document.getElementById('clearSearch');
+    const noResults = document.getElementById('noResults');
 
-    let currentFilter = 'all';
+    let activeCategory = 'all';
 
     function filterProducts() {
-        const keyword = searchInput.value.toLowerCase();
+
+        const keyword = searchInput.value.toLowerCase().trim();
+
         let visibleCount = 0;
 
-        productCards.forEach(card => {
+        productCards.forEach(function (card) {
+
             const category = card.dataset.category;
             const name = card.dataset.name;
 
             const categoryMatch =
-                currentFilter === 'all' || category === currentFilter;
+                activeCategory === 'all' ||
+                category === activeCategory;
 
-            const searchMatch = name.includes(keyword);
+            const searchMatch =
+                name.includes(keyword);
 
             if (categoryMatch && searchMatch) {
+
                 card.style.display = '';
                 visibleCount++;
+
             } else {
+
                 card.style.display = 'none';
+
             }
+
         });
 
-        emptyResult.style.display = visibleCount === 0 ? 'block' : 'none';
+        if (noResults) {
+            noResults.style.display =
+                visibleCount === 0 ? 'block' : 'none';
+        }
+
     }
 
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            filterButtons.forEach(btn => btn.classList.remove('active'));
+
+    // CATEGORY FILTER
+    filterButtons.forEach(function (button) {
+
+        button.addEventListener('click', function () {
+
+            filterButtons.forEach(function (btn) {
+                btn.classList.remove('active');
+            });
 
             button.classList.add('active');
-            currentFilter = button.dataset.filter;
+
+            activeCategory = button.dataset.filter;
 
             filterProducts();
+
         });
+
     });
 
-    searchInput.addEventListener('input', filterProducts);
+
+    // SEARCH
+    if (searchInput) {
+
+        searchInput.addEventListener('input', filterProducts);
+
+    }
+
+
+    // CLEAR SEARCH
+    if (clearSearch) {
+
+        clearSearch.addEventListener('click', function () {
+
+            searchInput.value = '';
+
+            filterProducts();
+
+            searchInput.focus();
+
+        });
+
+    }
+
+});
 </script>
-@endpush
+
+@endsection

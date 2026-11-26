@@ -111,8 +111,11 @@
 
                 <article class="product-card">
 
-                    <a href="{{ route('menu.detail', $product['slug']) }}" class="product-image">
-                        <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}">
+                    <a href="{{ route('product.detail', $product['id']) }}" class="product-image">
+                        <img
+                            src="{{ $product['image'] }}"
+                            alt="{{ $product['name'] }}"
+                        >
 
                         <span class="product-tag">
                             ESSENZA FAVORITE
@@ -121,7 +124,10 @@
 
                     <div class="product-info">
                         <div>
-                            <span class="product-category">{{ $product['category'] }}</span>
+                            <span class="product-category">
+                                {{ $product['category'] }}
+                            </span>
+
                             <h3>{{ $product['name'] }}</h3>
                         </div>
 
@@ -129,14 +135,6 @@
                             Rp {{ number_format($product['price'], 0, ',', '.') }}
                         </span>
                     </div>
-
-                    <p class="product-description">
-                        {{ $product['description'] }}
-                    </p>
-
-                    <a href="{{ route('menu.detail', $product['slug']) }}" class="product-link">
-                        Discover <span>↗</span>
-                    </a>
 
                 </article>
 
@@ -151,7 +149,9 @@
     <div class="container experience-grid">
 
         <div class="experience-content">
-            <span class="section-label light-label">A MOMENT FOR YOURSELF</span>
+            <span class="section-label light-label">
+                A MOMENT FOR YOURSELF
+            </span>
 
             <h2>
                 Slow down.<br>
@@ -183,8 +183,14 @@
 
         <div class="center-heading">
             <span class="section-label">WHY ESSENZA</span>
-            <h2>Every cup has a <em>purpose.</em></h2>
-            <p>Small details. Thoughtfully made. Beautifully served.</p>
+
+            <h2>
+                Every cup has a <em>purpose.</em>
+            </h2>
+
+            <p>
+                Small details. Thoughtfully made. Beautifully served.
+            </p>
         </div>
 
         <div class="values-grid">
@@ -192,7 +198,9 @@
             <div class="value-card">
                 <span class="value-number">01</span>
                 <div class="value-icon">✦</div>
+
                 <h3>Quality Ingredients</h3>
+
                 <p>
                     We choose carefully selected ingredients
                     to create the perfect balance in every cup.
@@ -202,7 +210,9 @@
             <div class="value-card">
                 <span class="value-number">02</span>
                 <div class="value-icon">☕</div>
+
                 <h3>Made with Care</h3>
+
                 <p>
                     Every drink is prepared with attention,
                     passion, and a little extra love.
@@ -212,7 +222,9 @@
             <div class="value-card">
                 <span class="value-number">03</span>
                 <div class="value-icon">♡</div>
+
                 <h3>Warm Experience</h3>
+
                 <p>
                     A welcoming space where good coffee
                     and meaningful moments come together.
@@ -226,7 +238,10 @@
 
 <section class="cta-section">
     <div class="container cta-content">
-        <span class="section-label">YOUR NEXT FAVORITE CUP</span>
+
+        <span class="section-label">
+            YOUR NEXT FAVORITE CUP
+        </span>
 
         <h2>
             Let's make your day<br>
@@ -236,6 +251,11 @@
         <a href="{{ route('menu') }}" class="btn btn-dark">
             Explore our menu <span>↗</span>
         </a>
+        <a href="{{ url('/admin/login') }}" class="admin-login-btn">
+        <i class="fas fa-user-shield"></i>
+        Login Admin
+        </a>
+
     </div>
 </section>
 
